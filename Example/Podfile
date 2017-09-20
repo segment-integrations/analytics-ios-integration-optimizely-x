@@ -1,12 +1,11 @@
-use_frameworks!
-
 target 'Segment-Optimizely-X_Example' do
   pod 'Segment-Optimizely-X', :path => '../'
 
   target 'Segment-Optimizely-X_Tests' do
     inherit! :search_paths
 
-    pod 'Specta'
-  pod 'Expecta'
+pod 'OCMockito'
+pod 'Specta'
+pod 'Expecta'
   end
 end

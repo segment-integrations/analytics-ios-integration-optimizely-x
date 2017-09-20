@@ -39,7 +39,7 @@
 
 - (id<SEGIntegration>)createWithSettings:(NSDictionary *)settings forAnalytics:(SEGAnalytics *)analytics
 {
-    return [[SEGOptimizelyXIntegration alloc] initWithSettings:settings andOptimizelyClient:self.client];
+    return [[SEGOptimizelyXIntegration alloc] initWithSettings:settings andOptimizelyClient:self.client withAnalytics:analytics];
 }
 
 - (NSString *)key
