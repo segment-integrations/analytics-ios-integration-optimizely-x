@@ -14,8 +14,7 @@
 
 @interface SEGOptimizelyXIntegrationFactory : NSObject <SEGIntegrationFactory>
 
-+ (instancetype)instance;
-+ (instancetype)createWithOptimizelyClient:(NSString *)token optimizelyClient:(OPTLYClient *)client;
++ (instancetype)instanceWithOptimizely:(OPTLYManager *)optimizely;
 
 @property OPTLYClient *client;
 

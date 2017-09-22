@@ -13,7 +13,7 @@
 
 @implementation SEGOptimizelyXIntegrationFactory
 
-+ (instancetype)instance
++ (instancetype)instanceWithOptimizely:(OPTLYManager *)optimizely
 {
     static dispatch_once_t once;
     static SEGOptimizelyXIntegrationFactory *sharedInstance;
