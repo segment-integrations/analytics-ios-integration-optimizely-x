@@ -14,13 +14,13 @@
 
 @interface SEGOptimizelyXIntegration : NSObject <SEGIntegration>
 
-@property (nonatomic, strong) NSDictionary *settings;
-@property (nonatomic, strong) OPTLYClient *client;
-@property (nonatomic) id observer;
-@property (nonatomic) NSString *userId;
-@property (nonatomic, strong) SEGAnalytics *analytics;
+@property (nonatomic, strong, nonnull) NSDictionary *settings;
+@property (nonatomic, strong, nonnull) OPTLYClient *client;
+@property (nonatomic, nullable) id observer;
+@property (nonatomic, nullable) NSString *userId;
+@property (nonatomic, strong, nonnull) SEGAnalytics *analytics;
 
 
-- (id)initWithSettings:(NSDictionary *)settings andOptimizelyClient:(OPTLYClient *)client withAnalytics:(SEGAnalytics *)analytics;
+- (id _Nonnull)initWithSettings:(NSDictionary *_Nonnull)settings andOptimizelyClient:(OPTLYClient *_Nonnull)client withAnalytics:(SEGAnalytics *_Nonnull)analytics;
 
 @end

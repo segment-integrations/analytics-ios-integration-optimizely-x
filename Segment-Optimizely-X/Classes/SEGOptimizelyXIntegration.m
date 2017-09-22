@@ -48,11 +48,12 @@
     NSString *segmentAnonymousId = [self.analytics getAnonymousId];
     BOOL trackKnownUsers = [[self.settings objectForKey:@"trackKnownUsers"] boolValue];
 
-    if (trackKnownUsers && self.userId) {
+    if (trackKnownUsers && [self.userId length] == 0) {
+        SEGLog(@"Segment will only track users associated with a userId when the trackKnownUsers setting is enabled.");
+        return;
+    } else if (trackKnownUsers && self.userId) {
         [self.client track:payload.event userId:self.userId attributes:payload.properties];
         SEGLog(@"[optimizely track:@% userId:@% attributes:@%]", payload.event, self.userId, payload.properties);
-    } else if (trackKnownUsers && [self.userId length] == 0) {
-        SEGLog(@"Segment will only track users associated with a userId when the trackKnownUsers setting is enabled.");
     } else {
         [self.client track:payload.event userId:segmentAnonymousId attributes:payload.properties];
         SEGLog(@"[optimizely track:@% userId:@% attributes:@%]", payload.event, segmentAnonymousId, payload.properties);
