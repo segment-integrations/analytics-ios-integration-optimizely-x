@@ -33,15 +33,17 @@
     return self;
 }
 
+
 - (void)identify:(SEGIdentifyPayload *)payload
 {
-    if ([self.manager getOptimizely] == nil) {
-        [self enqueueAction:payload];
-    } else {
-        self.client = [self.manager getOptimizely];
-        if (payload.userId) {
-            self.userId = payload.userId;
-        }
+    if (payload.userId) {
+        self.userId = payload.userId;
+        SEGLog(@"SEGOptimizelyX assigning userId %@", self.userId);
+    }
+
+    if (payload.traits) {
+        self.userTraits = payload.traits;
+        SEGLog(@"SEGOptimizelyX assigning attributes %@", self.userTraits);
     }
 }
 
@@ -50,23 +52,36 @@
 {
     if ([self.manager getOptimizely] == nil) {
         [self enqueueAction:payload];
-    } else {
-        self.client = [self.manager getOptimizely];
-        // Segment will default sending `track` calls with `anonymousId`s since Optimizely X does not alias known and unknown users
-        // https://developers.optimizely.com/x/solutions/sdks/reference/index.html?language=objectivec&platform=mobile#user-ids
-        NSString *segmentAnonymousId = [self.analytics getAnonymousId];
-        BOOL trackKnownUsers = [[self.settings objectForKey:@"trackKnownUsers"] boolValue];
+    }
 
-        if (trackKnownUsers && [self.userId length] == 0) {
-            SEGLog(@"Segment will only track users associated with a userId when the trackKnownUsers setting is enabled.");
-            return;
-        } else if (trackKnownUsers && self.userId) {
-            [self.client track:payload.event userId:self.userId attributes:payload.properties];
-            SEGLog(@"[optimizely track:@% userId:@% attributes:@%]", payload.event, self.userId, payload.properties);
+    self.client = [self.manager getOptimizely];
+
+    // Segment will default sending `track` calls with `anonymousId`s since Optimizely X does not alias known and unknown users
+    // https://developers.optimizely.com/x/solutions/sdks/reference/index.html?language=objectivec&platform=mobile#user-ids
+    BOOL trackKnownUsers = [[self.settings objectForKey:@"trackKnownUsers"] boolValue];
+    if (trackKnownUsers && [self.userId length] == 0) {
+        SEGLog(@"Segment will only track users associated with a userId when the trackKnownUsers setting is enabled.");
+        return;
+    }
+
+    // Attributes must not be nil, so Segment will trigger track without attributes if self.userTraits is empty
+    if (trackKnownUsers) {
+        if (self.userTraits.count > 0) {
+            [self.client track:payload.event userId:self.userId attributes:self.userTraits eventTags:payload.properties];
+            SEGLog(@"[optimizely track:%@ userId:%@ attributes:%@ eventTags:%@]", payload.event, self.userId, self.userTraits, payload.properties);
         } else {
-            [self.client track:payload.event userId:segmentAnonymousId attributes:payload.properties];
-            SEGLog(@"[optimizely track:@% userId:@% attributes:@%]", payload.event, segmentAnonymousId, payload.properties);
+            [self.client track:payload.event userId:self.userId eventTags:payload.properties];
+            SEGLog(@"[optimizely track:%@ userId:%@ eventTags:%@]", payload.event, self.userId, payload.properties);
         }
+    }
+
+    NSString *segmentAnonymousId = [self.analytics getAnonymousId];
+    if (!trackKnownUsers && self.userTraits.count > 0) {
+        [self.client track:payload.event userId:segmentAnonymousId attributes:self.userTraits eventTags:payload.properties];
+        SEGLog(@"[optimizely track:%@ userId:%@ attributes:%@ eventTags:%@]", payload.event, segmentAnonymousId, self.userTraits, payload.properties);
+    } else {
+        [self.client track:payload.event userId:segmentAnonymousId eventTags:payload.properties];
+        SEGLog(@"[optimizely track:%@ userId:%@ eventTags:%@]", payload.event, segmentAnonymousId, payload.properties);
     }
 }
 
@@ -76,10 +91,11 @@
         return;
     } else {
         [[NSNotificationCenter defaultCenter] removeObserver:self.observer];
-        SEGLog(@"[NSNotificationCenter defaultCenter] removeObserver:@%", self.observer);
+        SEGLog(@"[NSNotificationCenter defaultCenter] removeObserver:%@", self.observer);
     }
 }
 
+#pragma mark - Experiment Viewed For NSNotification
 
 - (void)experimentDidGetViewed:(NSNotification *)notification
 {
@@ -93,49 +109,40 @@
     };
 
     // Trigger event as per our spec https://segment.com/docs/spec/ab-testing/
-    [self.analytics track:@"Experiment Viewed" properties:properties];
-    SEGLog(@"[[SEGAnalytics sharedAnalytics] track:@'Experiment Viewed' properties:%@", properties);
+
+    [self.analytics track:@"Experiment Viewed" properties:properties options:@{
+        @"integrations" : @{
+            @"Optimizely X" : @NO
+        }
+    }];
 }
 
-#pragma mark - Queueing
+#pragma mark - Private - Queueing
 
-// If Optimizely is not initialized, add events to queue
-// Check if Optimizely has been initialized every 30 seconds
-// If not initialized, continue adding to a queue
-// If initialized, for each item in queue, trigger respective analytics call
-// Once queue is empty, release
-
-
-- (void)enqueueAction:(SEGPayload *)payload
+- (void)enqueueAction:(SEGTrackPayload *)payload
 {
     SEGLog(@"%@ Optimizely not initialized. Enqueueing action: %@", self, payload);
-    [self queuePayload:[payload copy]];
-}
-
-- (void)queuePayload:(NSDictionary *)payload
-{
     @try {
+        //TO DO: Should we set a condition to stop queuing events?
+        // Should set timer? Android has 5 minutes before stopping
         if (self.queue.count > 1000) {
             // Remove the oldest element.
             [self.queue removeObjectAtIndex:0];
+            SEGLog(@"%@ removeObjectAtIndex: 0", self.queue);
         }
+        [self setupTimer];
         [self.queue addObject:payload];
+        SEGLog(@"Queue length %i", self.queue.count);
     }
     @catch (NSException *exception) {
         SEGLog(@"%@ Error writing payload: %@", self, exception);
     }
 }
 
-// How to store queue
-//- (void)persistQueue
-//{
-//    [self.storage setArray:[self.queue copy] forKey:@"segment.integration.optimizelyx.queue.plist"];
-//}
-
 - (NSMutableArray *)queue
 {
     if (!_queue) {
-        _queue = [[self.storage arrayForKey:@"SEGOptimizelyQueue"] ?: @[] mutableCopy];
+        _queue = [@[] mutableCopy];
     }
 
     return _queue;
@@ -143,38 +150,34 @@
 
 - (void)setupTimer
 {
-    self.flushTimer = [NSTimer scheduledTimerWithTimeInterval:30.0 target:self selector:@selector(isOptimizelyInitialized) userInfo:nil repeats:YES];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (_flushTimer == nil) {
+            _flushTimer = [NSTimer scheduledTimerWithTimeInterval:10.0 target:self selector:@selector(isOptimizelyInitialized) userInfo:nil repeats:YES];
+        }
+    });
 }
 
-// Should I be using fact enumeration or enumerateUsingBlock?
 - (void)flushQueue:(NSMutableArray *)queue
 {
-    [queue enumerateObjectsUsingBlock:^(id obj, NSUInteger index, BOOL *stop) {
-        if (queue == nil) {
-            *stop = YES;
-        } else if ([obj isKindOfClass:[SEGTrackPayload class]]) {
-            [self track:obj];
-        } else if ([obj isKindOfClass:[SEGScreenPayload class]]) {
-            [self screen:obj];
-        } else if ([obj isKindOfClass:[SEGIdentifyPayload class]]) {
-            [self identify:obj];
-        } else if ([obj isKindOfClass:[SEGGroupPayload class]]) {
-            [self group:obj];
-        } else {
-            SEGLog(@"Fail to assess class. Stopping");
-            *stop = YES;
-        }
-    }];
+    for (SEGTrackPayload *obj in queue) {
+        [self track:obj];
+        SEGLog(@"Calling track with payload:%@", obj);
+    }
+
+    [queue removeAllObjects];
+    SEGLog(@"Removing all objects from queue");
 }
 
 - (BOOL)isOptimizelyInitialized
 {
     if ([self.manager getOptimizely] == nil) {
+        SEGLog(@"Optimizely not initialized.");
         return @NO;
     } else {
         [self.flushTimer invalidate];
         self.flushTimer = nil;
         [self flushQueue:self.queue];
+        SEGLog(@"Optimizely initialized.");
         return @YES;
     }
 }

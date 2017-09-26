@@ -9,5 +9,6 @@
 #import <Analytics/SEGAnalytics.h>
 #import <Segment-Optimizely-X/SEGOptimizelyXIntegrationFactory.h>
 #import <Segment-Optimizely-X/SEGOptimizelyXIntegration.h>
+#import <OCHamcrest/OCHamcrest.h>
 
 #endif

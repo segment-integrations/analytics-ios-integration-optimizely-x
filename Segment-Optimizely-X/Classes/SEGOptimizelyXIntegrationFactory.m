@@ -13,12 +13,12 @@
 
 @implementation SEGOptimizelyXIntegrationFactory
 
-+ (instancetype)instanceWithOptimizely:(OPTLYManager *)optimizely
++ (instancetype)instanceWithOptimizely:(OPTLYManager *)manager
 {
     static dispatch_once_t once;
     static SEGOptimizelyXIntegrationFactory *sharedInstance;
     dispatch_once(&once, ^{
-        sharedInstance = [[self alloc] initWithOptimizely:nil];
+        sharedInstance = [[self alloc] initWithOptimizely:manager];
     });
     return sharedInstance;
 }
@@ -32,7 +32,7 @@
     return self;
 }
 
-+ (instancetype)createWithOptimizelyClient:(NSString *)token optimizelyManager:(OPTLYManager *)manager
++ (instancetype)createWithOptimizelyManager:(NSString *)token optimizelyManager:(OPTLYManager *)manager
 {
     return [[self alloc] initWithOptimizely:manager];
 }

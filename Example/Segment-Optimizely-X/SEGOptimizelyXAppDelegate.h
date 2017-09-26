@@ -6,11 +6,16 @@
 //  Copyright (c) 2017 Segment.com. All rights reserved.
 //
 
+#import <OptimizelySDKiOS/OptimizelySDKiOS.h>
+#import <OptimizelySDKiOS/OPTLYManager.h>
+
 @import UIKit;
 
 
 @interface SEGOptimizelyXAppDelegate : UIResponder <UIApplicationDelegate>
 
 @property (strong, nonatomic) UIWindow *window;
+@property OPTLYManager *optlyManager;
+
 
 @end

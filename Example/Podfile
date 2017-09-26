@@ -7,5 +7,7 @@ target 'Segment-Optimizely-X_Example' do
 pod 'OCMockito'
 pod 'Specta'
 pod 'Expecta'
+pod 'OCHamcrest'
+
   end
 end

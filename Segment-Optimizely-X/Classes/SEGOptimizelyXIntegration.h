@@ -10,7 +10,6 @@
 #import <Analytics/SEGIntegration.h>
 #import <OptimizelySDKiOS/OptimizelySDKiOS.h>
 #import "SEGAnalytics.h"
-#import "SEGStorage.h"
 
 
 @interface SEGOptimizelyXIntegration : NSObject <SEGIntegration>
@@ -22,12 +21,12 @@
 @property (nonatomic, strong, nonnull) SEGAnalytics *analytics;
 @property (nonatomic, nullable) id observer;
 @property (nonatomic, nullable) NSString *userId;
+@property (nonatomic, nullable) NSDictionary *userTraits;
+
 
 #pragma mark - Queueing
 @property (nonatomic, strong) NSMutableArray *_Nullable queue;
-@property (nonatomic, strong) id<SEGStorage> storage;
 @property (nonatomic, strong) NSTimer *_Nullable flushTimer;
-
 
 - (id _Nonnull)initWithSettings:(NSDictionary *_Nonnull)settings andOptimizelyManager:(OPTLYManager *_Nonnull)manager withAnalytics:(SEGAnalytics *_Nonnull)analytics;
 
