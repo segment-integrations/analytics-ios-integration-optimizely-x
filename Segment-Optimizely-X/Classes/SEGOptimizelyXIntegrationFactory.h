@@ -16,6 +16,6 @@
 
 + (instancetype)instanceWithOptimizely:(OPTLYManager *)optimizely;
 
-@property OPTLYClient *client;
+@property OPTLYManager *manager;
 
 @end

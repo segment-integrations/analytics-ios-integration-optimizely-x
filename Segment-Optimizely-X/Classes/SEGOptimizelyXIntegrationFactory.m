@@ -23,23 +23,23 @@
     return sharedInstance;
 }
 
-- (id)initWithOptimizely:(OPTLYClient *)client
+- (id)initWithOptimizely:(OPTLYManager *)manager
 {
     if (self = [super init]) {
-        self.client = client;
+        self.manager = manager;
     }
 
     return self;
 }
 
-+ (instancetype)createWithOptimizelyClient:(NSString *)token optimizelyClient:(OPTLYClient *)client
++ (instancetype)createWithOptimizelyClient:(NSString *)token optimizelyManager:(OPTLYManager *)manager
 {
-    return [[self alloc] initWithOptimizely:client];
+    return [[self alloc] initWithOptimizely:manager];
 }
 
 - (id<SEGIntegration>)createWithSettings:(NSDictionary *)settings forAnalytics:(SEGAnalytics *)analytics
 {
-    return [[SEGOptimizelyXIntegration alloc] initWithSettings:settings andOptimizelyClient:self.client withAnalytics:analytics];
+    return [[SEGOptimizelyXIntegration alloc] initWithSettings:settings andOptimizelyManager:self.manager withAnalytics:analytics];
 }
 
 - (NSString *)key

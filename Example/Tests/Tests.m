@@ -13,16 +13,20 @@ SpecBegin(InitialSpecs);
 describe(@"SEGOptimizelyXIntegration", ^{
 
     __block id mockOptimizelyX;
+    __block id mockOptimizelyManager;
     __block SEGAnalytics *mockAnalytics;
     __block SEGOptimizelyXIntegration *integration;
 
     beforeEach(^{
         mockOptimizelyX = mock([OPTLYClient class]);
+        mockOptimizelyManager = mock([OPTLYManager class]);
         mockAnalytics = mock([SEGAnalytics class]);
 
         integration = [[SEGOptimizelyXIntegration alloc] initWithSettings:@{
             @"trackKnownUsers" : @0
-        } andOptimizelyClient:mockOptimizelyX withAnalytics:mockAnalytics];
+        } andOptimizelyManager:mockOptimizelyManager withAnalytics:mockAnalytics];
+        [given([mockOptimizelyManager getOptimizely]) willReturn:mockOptimizelyX];
+
     });
 
     it(@"tracks unknown user", ^{
@@ -41,7 +45,7 @@ describe(@"SEGOptimizelyXIntegration", ^{
     it(@"tracks known user", ^{
         integration = [[SEGOptimizelyXIntegration alloc] initWithSettings:@{
             @"trackKnownUsers" : @1
-        } andOptimizelyClient:mockOptimizelyX withAnalytics:mockAnalytics];
+        } andOptimizelyManager:mockOptimizelyManager withAnalytics:mockAnalytics];
         SEGIdentifyPayload *identifyPayload = [[SEGIdentifyPayload alloc] initWithUserId:@"1234" anonymousId:nil traits:@{} context:@{} integrations:@{}];
         SEGTrackPayload *payload = [[SEGTrackPayload alloc] initWithEvent:@"Event" properties:@{
             @"name" : @"Bob",
@@ -58,7 +62,7 @@ describe(@"SEGOptimizelyXIntegration", ^{
     it(@"does not track if settings.trackKnownUser enabled without userId", ^{
         integration = [[SEGOptimizelyXIntegration alloc] initWithSettings:@{
             @"trackKnownUsers" : @1
-        } andOptimizelyClient:mockOptimizelyX withAnalytics:mockAnalytics];
+        } andOptimizelyManager:mockOptimizelyManager withAnalytics:mockAnalytics];
         SEGTrackPayload *payload = [[SEGTrackPayload alloc] initWithEvent:@"Event" properties:@{
             @"name" : @"Bob",
             @"gender" : @"male"
