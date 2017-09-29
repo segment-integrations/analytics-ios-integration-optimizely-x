@@ -121,21 +121,24 @@
 
 - (void)enqueueAction:(SEGTrackPayload *)payload
 {
-    SEGLog(@"%@ Optimizely not initialized. Enqueueing action: %@", self, payload);
-    @try {
-        //TO DO: Should we set a condition to stop queuing events?
-        // Should set timer? Android has 5 minutes before stopping
-        if (self.queue.count > 1000) {
-            // Remove the oldest element.
-            [self.queue removeObjectAtIndex:0];
-            SEGLog(@"%@ removeObjectAtIndex: 0", self.queue);
+    @synchronized(payload)
+    {
+        SEGLog(@"%@ Optimizely not initialized. Enqueueing action: %@", self, payload);
+        @try {
+            //TO DO: Should we set a condition to stop queuing events?
+            // Should set timer? Android has 5 minutes before stopping
+            if (self.queue.count > 100) {
+                // Remove the oldest element.
+                [self.queue removeObjectAtIndex:0];
+                SEGLog(@"%@ removeObjectAtIndex: 0", self.queue);
+            }
+            [self setupTimer];
+            [self.queue addObject:payload];
+            SEGLog(@"Queue length %i", self.queue.count);
         }
-        [self setupTimer];
-        [self.queue addObject:payload];
-        SEGLog(@"Queue length %i", self.queue.count);
-    }
-    @catch (NSException *exception) {
-        SEGLog(@"%@ Error writing payload: %@", self, exception);
+        @catch (NSException *exception) {
+            SEGLog(@"%@ Error writing payload: %@", self, exception);
+        }
     }
 }
 
@@ -159,13 +162,16 @@
 
 - (void)flushQueue:(NSMutableArray *)queue
 {
-    for (SEGTrackPayload *obj in queue) {
-        [self track:obj];
-        SEGLog(@"Calling track with payload:%@", obj);
-    }
+    @synchronized(queue)
+    {
+        for (SEGTrackPayload *obj in queue) {
+            [self track:obj];
+            SEGLog(@"Calling track with payload:%@", obj);
+        }
 
-    [queue removeAllObjects];
-    SEGLog(@"Removing all objects from queue");
+        [queue removeAllObjects];
+        SEGLog(@"Removing all objects from queue");
+    }
 }
 
 - (BOOL)isOptimizelyInitialized
@@ -181,5 +187,6 @@
         return @YES;
     }
 }
+
 
 @end
