@@ -24,12 +24,15 @@
         self.analytics = analytics;
     }
 
-    self.observer = [[NSNotificationCenter defaultCenter] addObserverForName:OptimizelyDidActivateExperimentNotification
-                                                                      object:nil
-                                                                       queue:nil
-                                                                  usingBlock:^(NSNotification *_Nonnull note) {
-                                                                      [self experimentDidGetViewed:note];
-                                                                  }];
+    if ([(NSNumber *)[self.settings objectForKey:@"listen"] boolValue]) {
+        self.observer = [[NSNotificationCenter defaultCenter] addObserverForName:OptimizelyDidActivateExperimentNotification
+                                                                          object:nil
+                                                                           queue:nil
+                                                                      usingBlock:^(NSNotification *_Nonnull note) {
+                                                                          [self experimentDidGetViewed:note];
+                                                                      }];
+    }
+
     return self;
 }
 
@@ -52,6 +55,9 @@
 {
     if ([self.manager getOptimizely] == nil) {
         [self enqueueAction:payload];
+    }
+
+    if ([(NSNumber *)[self.settings objectForKey:@"nonInteraction"] boolValue]) {
     }
 
     self.client = [self.manager getOptimizely];
@@ -95,21 +101,24 @@
     }
 }
 
-#pragma mark - Experiment Viewed For NSNotification
+#pragma mark - Experiment Viewed
 
 - (void)experimentDidGetViewed:(NSNotification *)notification
 {
     OPTLYExperiment *experiment = notification.userInfo[OptimizelyNotificationsUserDictionaryExperimentKey];
     OPTLYVariation *variation = notification.userInfo[OptimizelyNotificationsUserDictionaryVariationKey];
-    NSDictionary *properties = @{
-        @"experimentId" : [experiment experimentId],
-        @"experimentName" : [experiment experimentKey],
-        @"variationId" : [variation variationId],
-        @"variationName" : [variation variationKey]
-    };
+
+    NSMutableDictionary *properties = [[NSMutableDictionary alloc] init];
+    properties[@"experimentId"] = [experiment experimentId];
+    properties[@"experimentName"] = [experiment experimentKey];
+    properties[@"variationId"] = [variation variationId];
+    properties[@"variationName"] = [variation variationKey];
+
+    if ([(NSNumber *)[self.settings objectForKey:@"nonInteraction"] boolValue]) {
+        properties[@"nonInteraction"] = @1;
+    }
 
     // Trigger event as per our spec https://segment.com/docs/spec/ab-testing/
-
     [self.analytics track:@"Experiment Viewed" properties:properties options:@{
         @"integrations" : @{
             @"Optimizely X" : @NO
@@ -125,8 +134,6 @@
     {
         SEGLog(@"%@ Optimizely not initialized. Enqueueing action: %@", self, payload);
         @try {
-            //TO DO: Should we set a condition to stop queuing events?
-            // Should set timer? Android has 5 minutes before stopping
             if (self.queue.count > 100) {
                 // Remove the oldest element.
                 [self.queue removeObjectAtIndex:0];

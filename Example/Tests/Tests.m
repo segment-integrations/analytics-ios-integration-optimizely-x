@@ -24,7 +24,10 @@ describe(@"SEGOptimizelyXIntegration", ^{
             mockAnalytics = mock([SEGAnalytics class]);
 
             integration = [[SEGOptimizelyXIntegration alloc] initWithSettings:@{
-                @"trackKnownUsers" : @0
+                @"trackKnownUsers" : @0,
+                @"listen" : @1,
+                @"nonInteraction" : @1
+
             } andOptimizelyManager:mockOptimizelyManager withAnalytics:mockAnalytics];
             [given([mockOptimizelyManager getOptimizely]) willReturn:mockOptimizelyX];
 
@@ -68,6 +71,31 @@ describe(@"SEGOptimizelyXIntegration", ^{
             }];
         });
 
+        it(@"tracks unknown user with nonInteraction flag", ^{
+            [given([mockAnalytics getAnonymousId]) willReturn:@"1234"];
+            SEGIdentifyPayload *identifyPayload = [[SEGIdentifyPayload alloc] initWithUserId:nil anonymousId:nil traits:@{
+                @"gender" : @"female",
+                @"company" : @"segment",
+                @"name" : @"ladan"
+            } context:@{}
+                integrations:@{}];
+            SEGTrackPayload *payload = [[SEGTrackPayload alloc] initWithEvent:@"Event" properties:@{
+                @"plan" : @"Pro Annual",
+                @"accountType" : @"Facebook"
+            } context:@{
+            } integrations:@{}];
+            [integration identify:identifyPayload];
+            [integration track:payload];
+            [verify(mockOptimizelyX) track:@"Event" userId:@"1234" attributes:@{
+                @"gender" : @"female",
+                @"company" : @"segment",
+                @"name" : @"ladan"
+            } eventTags:@{
+                @"plan" : @"Pro Annual",
+                @"accountType" : @"Facebook"
+            }];
+        });
+
     });
 
     describe(@"Known Users", ^{
@@ -77,7 +105,9 @@ describe(@"SEGOptimizelyXIntegration", ^{
             mockAnalytics = mock([SEGAnalytics class]);
 
             integration = [[SEGOptimizelyXIntegration alloc] initWithSettings:@{
-                @"trackKnownUsers" : @1
+                @"trackKnownUsers" : @1,
+                @"listen" : @1,
+                @"nonInteraction" : @1
             } andOptimizelyManager:mockOptimizelyManager withAnalytics:mockAnalytics];
 
             [given([mockOptimizelyManager getOptimizely]) willReturn:mockOptimizelyX];
@@ -134,44 +164,40 @@ describe(@"SEGOptimizelyXIntegration", ^{
             }];
         });
 
+        it(@"tracks Experiment Viewed", ^{
+            NSError *error;
 
+            NSDictionary *variationDict = @{ @"id" : @"8729081299",
+                                             @"key" : @"variation1" };
+            OPTLYVariation *variation = [[OPTLYVariation alloc] initWithDictionary:variationDict error:&error];
+
+            NSDictionary *experimentDict = @{ @"status" : @"Running",
+                                              @"key" : @"variation_view",
+                                              @"layerId" : @"8743920636",
+                                              @"trafficAllocation" : @[ @{@"entityId" : @"8737441336", @"endOfRange" : @5000}, @{@"entityId" : @"8729081299", @"endOfRange" : @10000} ],
+                                              @"audienceIds" : @[],
+                                              @"variations" : @[ @{@"variables" : @[], @"id" : @"8729081299", @"key" : @"variation1"}, @{@"variables" : @[], @"id" : @"8737441336", @"key" : @"variation2"} ],
+                                              @"forcedVariations" : @{},
+                                              @"id" : @"8734392016" };
+
+            OPTLYExperiment *experiment = [[OPTLYExperiment alloc] initWithDictionary:experimentDict error:&error];
+
+            NSMutableDictionary *userInfo = [NSMutableDictionary dictionaryWithDictionary:@{
+                OptimizelyNotificationsUserDictionaryVariationKey : variation,
+                OptimizelyNotificationsUserDictionaryExperimentKey : experiment
+            }];
+
+            [[NSNotificationCenter defaultCenter] postNotificationName:OptimizelyDidActivateExperimentNotification object:self userInfo:userInfo];
+
+            [verify(mockAnalytics) track:@"Experiment Viewed" properties:@{ @"experimentId" : @"8734392016",
+                                                                            @"experimentName" : @"variation_view",
+                                                                            @"nonInteraction" : @1,
+                                                                            @"variationId" : @"8729081299",
+                                                                            @"variationName" : @"variation1" }
+                                 options:@{ @"integrations" : @{@"Optimizely X" : @0} }];
+        });
     });
 
-    // TODO: revist
-    //    it(@"tracks Experiment Viewed", ^{
-    //        NSError *error;
-    //
-    //        NSDictionary *variationDict = @{
-    //                                        @"variationId":@"4501",
-    //                                        @"variationKey":@"Variation 1"
-    //                                        };
-    //        OPTLYVariation* variation = [[OPTLYVariation alloc]initWithDictionary:variationDict error:&error];
-    //
-    //        NSDictionary *experimentDict =  @{
-    //                                          @"experimentId":@"e72",
-    //                                          @"experimentKey":@"Experiment 1",
-    //                                          @"status":@"test status",
-    //                                          @"trafficAllocations":@"test traffic",
-    //                                          @"forcedVariations":@"example",
-    //                                          @"layerId":@"1234",
-    //                                          @"variations": @"variations",
-    //                                          @"audienceIds":@"audience id"};
-    //        OPTLYExperiment* experiment = [[OPTLYExperiment alloc] initWithDictionary:experimentDict error:&error];
-    //
-    //
-    //        NSMutableDictionary *userInfo = [NSMutableDictionary dictionaryWithDictionary:@{
-    //                                                                                        OptimizelyNotificationsUserDictionaryVariationKey: variation ?: @"",
-    //                                                                                        OptimizelyNotificationsUserDictionaryExperimentKey:experiment ?: @""
-    //                                                                                        }];
-    //
-    //        [[NSNotificationCenter defaultCenter] postNotificationName:OptimizelyDidActivateExperimentNotification object:self userInfo:userInfo];
-    //
-    //        [verify(mockAnalytics) track:@"Experiment Viewed" properties:@{ @"experimentId" : @"e72",
-    //                                                                        @"experimentName" : @"Experiment 1",
-    //                                                                        @"variationId":@"4501",
-    //                                                                        @"variationName":@"Variation 1"
-    //                                                                      }];
-    //    });
 });
 
 
