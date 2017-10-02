@@ -17,20 +17,23 @@ describe(@"SEGOptimizelyXIntegration", ^{
     __block SEGAnalytics *mockAnalytics;
     __block SEGOptimizelyXIntegration *integration;
 
+    beforeEach(^{
+        mockOptimizelyX = mock([OPTLYClient class]);
+        mockOptimizelyManager = mock([OPTLYManager class]);
+        mockAnalytics = mock([SEGAnalytics class]);
+        [given([mockOptimizelyManager getOptimizely]) willReturn:mockOptimizelyX];
+
+    });
+
+
     describe(@"Unknown Users", ^{
         beforeEach(^{
-            mockOptimizelyX = mock([OPTLYClient class]);
-            mockOptimizelyManager = mock([OPTLYManager class]);
-            mockAnalytics = mock([SEGAnalytics class]);
-
             integration = [[SEGOptimizelyXIntegration alloc] initWithSettings:@{
                 @"trackKnownUsers" : @0,
                 @"listen" : @1,
                 @"nonInteraction" : @1
 
             } andOptimizelyManager:mockOptimizelyManager withAnalytics:mockAnalytics];
-            [given([mockOptimizelyManager getOptimizely]) willReturn:mockOptimizelyX];
-
         });
 
         it(@"tracks unknown user without attributes", ^{
@@ -100,18 +103,11 @@ describe(@"SEGOptimizelyXIntegration", ^{
 
     describe(@"Known Users", ^{
         beforeEach(^{
-            mockOptimizelyX = mock([OPTLYClient class]);
-            mockOptimizelyManager = mock([OPTLYManager class]);
-            mockAnalytics = mock([SEGAnalytics class]);
-
             integration = [[SEGOptimizelyXIntegration alloc] initWithSettings:@{
                 @"trackKnownUsers" : @1,
                 @"listen" : @1,
                 @"nonInteraction" : @1
             } andOptimizelyManager:mockOptimizelyManager withAnalytics:mockAnalytics];
-
-            [given([mockOptimizelyManager getOptimizely]) willReturn:mockOptimizelyX];
-
         });
 
         it(@"does not track if settings.trackKnownUser enabled without userId", ^{
@@ -163,14 +159,20 @@ describe(@"SEGOptimizelyXIntegration", ^{
                                                                                 @"accountType" : @"Facebook"
             }];
         });
+    });
 
-        it(@"tracks Experiment Viewed", ^{
+    describe(@"Experiment Viewed", ^{
+        beforeEach(^{
+            integration = [[SEGOptimizelyXIntegration alloc] initWithSettings:@{
+                @"trackKnownUsers" : @1,
+                @"listen" : @1,
+                @"nonInteraction" : @1
+            } andOptimizelyManager:mockOptimizelyManager withAnalytics:mockAnalytics];
+
             NSError *error;
-
             NSDictionary *variationDict = @{ @"id" : @"8729081299",
                                              @"key" : @"variation1" };
             OPTLYVariation *variation = [[OPTLYVariation alloc] initWithDictionary:variationDict error:&error];
-
             NSDictionary *experimentDict = @{ @"status" : @"Running",
                                               @"key" : @"variation_view",
                                               @"layerId" : @"8743920636",
@@ -186,9 +188,11 @@ describe(@"SEGOptimizelyXIntegration", ^{
                 OptimizelyNotificationsUserDictionaryVariationKey : variation,
                 OptimizelyNotificationsUserDictionaryExperimentKey : experiment
             }];
-
             [[NSNotificationCenter defaultCenter] postNotificationName:OptimizelyDidActivateExperimentNotification object:self userInfo:userInfo];
 
+        });
+
+        it(@"tracks Experiment Viewed", ^{
             [verify(mockAnalytics) track:@"Experiment Viewed" properties:@{ @"experimentId" : @"8734392016",
                                                                             @"experimentName" : @"variation_view",
                                                                             @"nonInteraction" : @1,
