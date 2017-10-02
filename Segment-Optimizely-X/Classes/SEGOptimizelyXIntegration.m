@@ -22,6 +22,7 @@
         self.settings = settings;
         self.manager = manager;
         self.analytics = analytics;
+        self.backgroundQueue = dispatch_queue_create("com.segment.integrations.optimizelyx.backgroundQueue", DISPATCH_QUEUE_SERIAL);
     }
 
     if ([(NSNumber *)[self.settings objectForKey:@"listen"] boolValue]) {
@@ -141,7 +142,7 @@
             }
             [self setupTimer];
             [self.queue addObject:payload];
-            SEGLog(@"Queue length %i", self.queue.count);
+            SEGLog(@"SEGOptimizelyX background queue length %i", self.queue.count);
         }
         @catch (NSException *exception) {
             SEGLog(@"%@ Error writing payload: %@", self, exception);
@@ -169,30 +170,34 @@
 
 - (void)flushQueue:(NSMutableArray *)queue
 {
-    @synchronized(queue)
-    {
-        for (SEGTrackPayload *obj in queue) {
-            [self track:obj];
-            SEGLog(@"Calling track with payload:%@", obj);
-        }
-
-        [queue removeAllObjects];
-        SEGLog(@"Removing all objects from queue");
+    for (SEGTrackPayload *obj in queue) {
+        [self track:obj];
+        SEGLog(@"SEGOptimizelyX calling track with payload:%@", obj);
     }
+
+    [queue removeAllObjects];
+    SEGLog(@"SEGOptimizelyX removing all objects from queue");
 }
 
-- (BOOL)isOptimizelyInitialized
+- (void)isOptimizelyInitialized
 {
-    if ([self.manager getOptimizely] == nil) {
-        SEGLog(@"Optimizely not initialized.");
-        return @NO;
-    } else {
-        [self.flushTimer invalidate];
-        self.flushTimer = nil;
-        [self flushQueue:self.queue];
-        SEGLog(@"Optimizely initialized.");
-        return @YES;
-    }
+    [self dispatchBackground:^{
+
+        if ([self.manager getOptimizely] == nil) {
+            SEGLog(@"Optimizely not initialized.");
+        } else {
+            [self.flushTimer invalidate];
+            self.flushTimer = nil;
+            [self flushQueue:self.queue];
+            SEGLog(@"Optimizely initialized.");
+        }
+
+    }];
+}
+
+- (void)dispatchBackground:(void (^)(void))block
+{
+    dispatch_async(_backgroundQueue, block);
 }
 
 

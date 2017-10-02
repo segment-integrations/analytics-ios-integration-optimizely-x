@@ -25,6 +25,7 @@
 
 
 #pragma mark - Queueing
+@property (nonatomic, strong) dispatch_queue_t _Nullable backgroundQueue;
 @property (nonatomic, strong) NSMutableArray *_Nullable queue;
 @property (nonatomic, strong) NSTimer *_Nullable flushTimer;
 
