@@ -22,7 +22,7 @@
         self.settings = settings;
         self.manager = manager;
         self.analytics = analytics;
-        self.backgroundQueue = dispatch_queue_create("com.segment.integrations.optimizelyx.backgroundQueue", DISPATCH_QUEUE_SERIAL);
+        self.backgroundQueue = dispatch_queue_create("com.segment.integrations.optimizelyx.backgroundQueue", NULL);
     }
 
     if ([(NSNumber *)[self.settings objectForKey:@"listen"] boolValue]) {
@@ -57,10 +57,6 @@
     if ([self.manager getOptimizely] == nil) {
         [self enqueueAction:payload];
     }
-
-    if ([(NSNumber *)[self.settings objectForKey:@"nonInteraction"] boolValue]) {
-    }
-
     self.client = [self.manager getOptimizely];
 
     // Segment will default sending `track` calls with `anonymousId`s since Optimizely X does not alias known and unknown users
@@ -131,29 +127,30 @@
 
 - (void)enqueueAction:(SEGTrackPayload *)payload
 {
-    @synchronized(payload)
-    {
-        SEGLog(@"%@ Optimizely not initialized. Enqueueing action: %@", self, payload);
-        @try {
-            if (self.queue.count > 100) {
-                // Remove the oldest element.
-                [self.queue removeObjectAtIndex:0];
-                SEGLog(@"%@ removeObjectAtIndex: 0", self.queue);
+    [self dispatchBackground:^{
+        {
+            SEGLog(@"%@ Optimizely not initialized. Enqueueing action: %@", self, payload);
+            @try {
+        if (self.queue.count > 100) {
+            // Remove the oldest element.
+            [self.queue removeObjectAtIndex:0];
+            SEGLog(@"%@ removeObjectAtIndex: 0", self.queue);
+        }
+        [self setupTimer];
+        [self.queue addObject:payload];
+        SEGLog(@"SEGOptimizelyX background queue length %i", self.queue.count);
             }
-            [self setupTimer];
-            [self.queue addObject:payload];
-            SEGLog(@"SEGOptimizelyX background queue length %i", self.queue.count);
-        }
-        @catch (NSException *exception) {
-            SEGLog(@"%@ Error writing payload: %@", self, exception);
-        }
-    }
+            @catch (NSException *exception) {
+        SEGLog(@"%@ Error writing payload: %@", self, exception);
+            }
+}
+}];
 }
 
 - (NSMutableArray *)queue
 {
     if (!_queue) {
-        _queue = [@[] mutableCopy];
+        _queue = [NSMutableArray arrayWithCapacity:100];
     }
 
     return _queue;
