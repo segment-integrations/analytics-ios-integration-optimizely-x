@@ -57,7 +57,7 @@
     if ([self.manager getOptimizely] == nil) {
         [self enqueueAction:payload];
     }
-    self.client = [self.manager getOptimizely];
+    OPTLYClient *client = [self.manager getOptimizely];
 
     // Segment will default sending `track` calls with `anonymousId`s since Optimizely X does not alias known and unknown users
     // https://developers.optimizely.com/x/solutions/sdks/reference/index.html?language=objectivec&platform=mobile#user-ids
@@ -70,20 +70,20 @@
     // Attributes must not be nil, so Segment will trigger track without attributes if self.userTraits is empty
     if (trackKnownUsers) {
         if (self.userTraits.count > 0) {
-            [self.client track:payload.event userId:self.userId attributes:self.userTraits eventTags:payload.properties];
+            [client track:payload.event userId:self.userId attributes:self.userTraits eventTags:payload.properties];
             SEGLog(@"[optimizely track:%@ userId:%@ attributes:%@ eventTags:%@]", payload.event, self.userId, self.userTraits, payload.properties);
         } else {
-            [self.client track:payload.event userId:self.userId eventTags:payload.properties];
+            [client track:payload.event userId:self.userId eventTags:payload.properties];
             SEGLog(@"[optimizely track:%@ userId:%@ eventTags:%@]", payload.event, self.userId, payload.properties);
         }
     }
 
     NSString *segmentAnonymousId = [self.analytics getAnonymousId];
     if (!trackKnownUsers && self.userTraits.count > 0) {
-        [self.client track:payload.event userId:segmentAnonymousId attributes:self.userTraits eventTags:payload.properties];
+        [client track:payload.event userId:segmentAnonymousId attributes:self.userTraits eventTags:payload.properties];
         SEGLog(@"[optimizely track:%@ userId:%@ attributes:%@ eventTags:%@]", payload.event, segmentAnonymousId, self.userTraits, payload.properties);
     } else {
-        [self.client track:payload.event userId:segmentAnonymousId eventTags:payload.properties];
+        [client track:payload.event userId:segmentAnonymousId eventTags:payload.properties];
         SEGLog(@"[optimizely track:%@ userId:%@ eventTags:%@]", payload.event, segmentAnonymousId, payload.properties);
     }
 }
@@ -128,29 +128,27 @@
 - (void)enqueueAction:(SEGTrackPayload *)payload
 {
     [self dispatchBackground:^{
-        {
-            SEGLog(@"%@ Optimizely not initialized. Enqueueing action: %@", self, payload);
-            @try {
-        if (self.queue.count > 100) {
-            // Remove the oldest element.
-            [self.queue removeObjectAtIndex:0];
-            SEGLog(@"%@ removeObjectAtIndex: 0", self.queue);
+        SEGLog(@"%@ Optimizely not initialized. Enqueueing action: %@", self, payload);
+        @try {
+            if (self.queue.count > 100) {
+                // Remove the oldest element.
+                [self.queue removeObjectAtIndex:0];
+                SEGLog(@"%@ removeObjectAtIndex: 0", self.queue);
+            }
+            [self setupTimer];
+            [self.queue addObject:payload];
+            SEGLog(@"SEGOptimizelyX background queue length %i", self.queue.count);
         }
-        [self setupTimer];
-        [self.queue addObject:payload];
-        SEGLog(@"SEGOptimizelyX background queue length %i", self.queue.count);
-            }
-            @catch (NSException *exception) {
-        SEGLog(@"%@ Error writing payload: %@", self, exception);
-            }
-}
-}];
+        @catch (NSException *exception) {
+            SEGLog(@"%@ Error writing payload: %@", self, exception);
+        }
+    }];
 }
 
 - (NSMutableArray *)queue
 {
     if (!_queue) {
-        _queue = [NSMutableArray arrayWithCapacity:100];
+        _queue = [NSMutableArray arrayWithCapacity:0];
     }
 
     return _queue;
@@ -165,14 +163,14 @@
     });
 }
 
-- (void)flushQueue:(NSMutableArray *)queue
+- (void)flushQueue
 {
-    for (SEGTrackPayload *obj in queue) {
+    for (SEGTrackPayload *obj in self.queue) {
         [self track:obj];
         SEGLog(@"SEGOptimizelyX calling track with payload:%@", obj);
     }
 
-    [queue removeAllObjects];
+    [self.queue removeAllObjects];
     SEGLog(@"SEGOptimizelyX removing all objects from queue");
 }
 
@@ -185,7 +183,7 @@
         } else {
             [self.flushTimer invalidate];
             self.flushTimer = nil;
-            [self flushQueue:self.queue];
+            [self flushQueue];
             SEGLog(@"Optimizely initialized.");
         }
 

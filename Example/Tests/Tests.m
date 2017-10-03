@@ -189,6 +189,20 @@ describe(@"SEGOptimizelyXIntegration", ^{
                                                                             @"variationName" : @"variation1" }
                                  options:@{ @"integrations" : @{@"Optimizely X" : @0} }];
         });
+
+        it(@"does not track Experiment Viewed with listen: false", ^{
+            integration = [[SEGOptimizelyXIntegration alloc] initWithSettings:@{
+                @"trackKnownUsers" : @1,
+                @"listen" : @0,
+                @"nonInteraction" : @0
+            } andOptimizelyManager:mockOptimizelyManager withAnalytics:mockAnalytics];
+            postNotification();
+            [verifyCount(mockAnalytics, never()) track:@"Experiment Viewed" properties:@{ @"experimentId" : @"8734392016",
+                                                                                          @"experimentName" : @"variation_view",
+                                                                                          @"variationId" : @"8729081299",
+                                                                                          @"variationName" : @"variation1" }
+                                               options:@{ @"integrations" : @{@"Optimizely X" : @0} }];
+        });
     });
 
 });
