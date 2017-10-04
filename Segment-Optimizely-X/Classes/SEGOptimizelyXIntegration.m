@@ -58,6 +58,24 @@
         [self enqueueAction:payload];
         return;
     }
+
+    [self trackEvent:payload];
+}
+
+- (void)reset
+{
+    if ([self.manager getOptimizely] == nil) {
+        return;
+    } else {
+        [[NSNotificationCenter defaultCenter] removeObserver:self.observer];
+        SEGLog(@"[NSNotificationCenter defaultCenter] removeObserver:%@", self.observer);
+    }
+}
+
+#pragma mark - Real Track Event
+
+- (void)trackEvent:(SEGTrackPayload *)payload
+{
     OPTLYClient *client = [self.manager getOptimizely];
 
     // Segment will default sending `track` calls with `anonymousId`s since Optimizely X does not alias known and unknown users
@@ -86,16 +104,6 @@
     } else {
         [client track:payload.event userId:segmentAnonymousId eventTags:payload.properties];
         SEGLog(@"[optimizely track:%@ userId:%@ eventTags:%@]", payload.event, segmentAnonymousId, payload.properties);
-    }
-}
-
-- (void)reset
-{
-    if ([self.manager getOptimizely] == nil) {
-        return;
-    } else {
-        [[NSNotificationCenter defaultCenter] removeObserver:self.observer];
-        SEGLog(@"[NSNotificationCenter defaultCenter] removeObserver:%@", self.observer);
     }
 }
 
@@ -167,7 +175,7 @@
 - (void)flushQueue
 {
     for (SEGTrackPayload *obj in self.queue) {
-        [self track:obj];
+        [self trackEvent:obj];
         SEGLog(@"SEGOptimizelyX calling track with payload:%@", obj);
     }
 
