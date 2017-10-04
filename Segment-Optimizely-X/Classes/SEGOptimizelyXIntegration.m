@@ -56,6 +56,7 @@
 {
     if ([self.manager getOptimizely] == nil) {
         [self enqueueAction:payload];
+        return;
     }
     OPTLYClient *client = [self.manager getOptimizely];
 
