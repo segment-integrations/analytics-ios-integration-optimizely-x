@@ -9,7 +9,7 @@
 #import <Foundation/Foundation.h>
 #import <Analytics/SEGIntegration.h>
 #import <OptimizelySDKiOS/OptimizelySDKiOS.h>
-#import "SEGAnalytics.h"
+#import <Analytics/SEGAnalytics.h>
 
 
 @interface SEGOptimizelyXIntegration : NSObject <SEGIntegration>
