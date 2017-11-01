@@ -1,6 +1,5 @@
 # Segment-Optimizely-X
 
-[![CI Status](http://img.shields.io/travis/segment-integrations/analytics-ios-integration-optimizely-x.svg?style=flat)](https://travis-ci.org/segment-integrations/analytics-ios-integration-optimizely-x)
 [![Version](https://img.shields.io/cocoapods/v/Segment-Optimizely-X.svg?style=flat)](http://cocoapods.org/pods/Segment-Optimizely-X)
 [![License](https://img.shields.io/cocoapods/l/Segment-Optimizely-X.svg?style=flat)](http://cocoapods.org/pods/Segment-Optimizely-X)
 [![Platform](https://img.shields.io/cocoapods/p/Segment-Optimizely-X.svg?style=flat)](http://cocoapods.org/pods/Segment-Optimizely-X)
