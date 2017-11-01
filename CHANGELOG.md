@@ -1,5 +1,10 @@
 Change Log
 ==========
+Version 1.0.3-beta *(31st October, 2017)*
+-------------------------------------------
+*(Supports analytics-ios 3.0.+)*
+
+* [Bug](https://github.com/segment-integrations/analytics-ios-integration-optimizely-x/pull/6): Fix SEGAnalytics.h import header.
 
 Version 1.0.2-beta *(4th October, 2017)*
 -------------------------------------------
