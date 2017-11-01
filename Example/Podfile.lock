@@ -44,7 +44,7 @@ PODS:
   - OptimizelySDKUserProfile/JSONModel (1.1.9):
     - JSONModel (= 1.3.0)
     - OptimizelySDKShared (= 1.1.9)
-  - Segment-Optimizely-X (0.1.0):
+  - Segment-Optimizely-X (1.0.3-beta):
     - Analytics (~> 3.0)
     - OptimizelySDKiOS
   - Specta (1.0.6)
@@ -73,7 +73,7 @@ SPEC CHECKSUMS:
   OptimizelySDKiOS: 060e24ddacb77e0bb45548863602816c3654cfc9
   OptimizelySDKShared: 2c981d2d88cc79296a314293f770fa5032f8bff8
   OptimizelySDKUserProfile: 20027486f6549934c479fd4b704c5c1195c8355b
-  Segment-Optimizely-X: 37f691787599bb470aa609a0ad82094c03175cdb
+  Segment-Optimizely-X: c5f3cd13a50af2b138c320cf9c68e656432f4789
   Specta: f506f3a8361de16bc0dcf3b17b75e269072ba465
 
 PODFILE CHECKSUM: 3f139a39887c552b65e461060502123fa87bf281
