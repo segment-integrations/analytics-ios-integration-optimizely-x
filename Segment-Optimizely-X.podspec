@@ -19,6 +19,6 @@ This is the Optimizely X integration for the iOS library.
 
     s.source_files = 'Segment-Optimizely-X/Classes/**/*'
     s.dependency 'Analytics', '~> 3.0'
-    s.dependency 'OptimizelySDKiOS'
+    s.dependency 'OptimizelySDKiOS', '~> 1.5'
 
 end
