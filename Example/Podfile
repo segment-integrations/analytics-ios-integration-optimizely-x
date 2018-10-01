@@ -1,13 +1,15 @@
+platform :ios, '8.0'
+
 target 'Segment-Optimizely-X_Example' do
   pod 'Segment-Optimizely-X', :path => '../'
 
   target 'Segment-Optimizely-X_Tests' do
     inherit! :search_paths
 
-pod 'OCMockito'
-pod 'Specta'
-pod 'Expecta'
-pod 'OCHamcrest'
+    pod 'OCMockito'
+    pod 'Specta'
+    pod 'Expecta'
+    pod 'OCHamcrest'
 
   end
 end
