@@ -8,7 +8,7 @@
 
 // https://github.com/Specta/Specta
 
-void postNotification()
+void postNotification(ActivateListener listenerBlock)
 {
     NSError *error;
     NSDictionary *variationDict = @{ @"id" : @"8729081299",
@@ -25,11 +25,11 @@ void postNotification()
 
     OPTLYExperiment *experiment = [[OPTLYExperiment alloc] initWithDictionary:experimentDict error:&error];
 
-    NSMutableDictionary *userInfo = [NSMutableDictionary dictionaryWithDictionary:@{
-        OptimizelyNotificationsUserDictionaryVariationKey : variation,
-        OptimizelyNotificationsUserDictionaryExperimentKey : experiment
-    }];
-    [[NSNotificationCenter defaultCenter] postNotificationName:OptimizelyDidActivateExperimentNotification object:nil userInfo:userInfo];
+    listenerBlock(experiment,
+                  @"mock userId",
+                  @{}, //attributes dictionary
+                  variation,
+                  @{}); //event dictionary
 }
 
 
@@ -160,14 +160,22 @@ describe(@"SEGOptimizelyXIntegration", ^{
     });
 
     describe(@"Experiment Viewed", ^{
+        __block OPTLYNotificationCenter *mockNotificationCenter;
+        beforeEach(^{
+            mockNotificationCenter = mock([OPTLYNotificationCenter class]);
+            [given([mockOptimizelyX notificationCenter]) willReturn:mockNotificationCenter];
+        });
+        
         it(@"tracks Experiment Viewed", ^{
             integration = [[SEGOptimizelyXIntegration alloc] initWithSettings:@{
                 @"trackKnownUsers" : @1,
                 @"listen" : @1,
                 @"nonInteraction" : @1
             } andOptimizelyManager:mockOptimizelyManager withAnalytics:mockAnalytics];
-            ;
-            postNotification();
+            HCArgumentCaptor *listenerArgument = [[HCArgumentCaptor alloc] init];
+            [verify(mockNotificationCenter) addActivateNotificationListener:(id)listenerArgument];
+            ActivateListener activateListenerBlock = listenerArgument.value;
+            postNotification(activateListenerBlock);
             [verify(mockAnalytics) track:@"Experiment Viewed" properties:@{ @"experimentId" : @"8734392016",
                                                                             @"experimentName" : @"variation_view",
                                                                             @"nonInteraction" : @1,
@@ -182,7 +190,10 @@ describe(@"SEGOptimizelyXIntegration", ^{
                 @"listen" : @1,
                 @"nonInteraction" : @0
             } andOptimizelyManager:mockOptimizelyManager withAnalytics:mockAnalytics];
-            postNotification();
+            HCArgumentCaptor *listenerArgument = [[HCArgumentCaptor alloc] init];
+            [verify(mockNotificationCenter) addActivateNotificationListener:(id)listenerArgument];
+            ActivateListener activateListenerBlock = listenerArgument.value;
+            postNotification(activateListenerBlock);
             [verify(mockAnalytics) track:@"Experiment Viewed" properties:@{ @"experimentId" : @"8734392016",
                                                                             @"experimentName" : @"variation_view",
                                                                             @"variationId" : @"8729081299",
@@ -196,7 +207,7 @@ describe(@"SEGOptimizelyXIntegration", ^{
                 @"listen" : @0,
                 @"nonInteraction" : @0
             } andOptimizelyManager:mockOptimizelyManager withAnalytics:mockAnalytics];
-            postNotification();
+            [verifyCount(mockNotificationCenter, never()) addActivateNotificationListener:anything()];
             [verifyCount(mockAnalytics, never()) track:@"Experiment Viewed" properties:@{ @"experimentId" : @"8734392016",
                                                                                           @"experimentName" : @"variation_view",
                                                                                           @"variationId" : @"8729081299",
