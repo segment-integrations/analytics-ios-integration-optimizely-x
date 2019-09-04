@@ -5,6 +5,8 @@
 [![License](https://img.shields.io/cocoapods/l/Segment-Optimizely-X.svg?style=flat)](http://cocoapods.org/pods/Segment-Optimizely-X)
 [![Platform](https://img.shields.io/cocoapods/p/Segment-Optimizely-X.svg?style=flat)](http://cocoapods.org/pods/Segment-Optimizely-X)
 
+**This SDK supports Optimizely iOS v1.1.9. Segment supports newer versions of Optimizely via Segment cloud mode. Read more about integrating with Optimizely via Segment cloud mode in [our documentation here](https://segment.com/docs/destinations/optimizely-full-stack/#ios-cloud-mode-implementation).**
+
 ## Example
 
 To run the example project, clone the repo, and run `pod install` from the Example directory first.
