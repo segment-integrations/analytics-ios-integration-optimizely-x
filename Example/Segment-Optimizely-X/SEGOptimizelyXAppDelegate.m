@@ -23,12 +23,21 @@
 
     OPTLYLoggerDefault *optlyLogger = [[OPTLYLoggerDefault alloc] initWithLogLevel:OptimizelyLogLevelError];
     // Initialize an Optimizely manager
-    self.optlyManager = [OPTLYManager init:^(OPTLYManagerBuilder *_Nullable builder) {
+    OPTLYManagerBuilder *builder = [OPTLYManagerBuilder builderWithBlock:^(OPTLYManagerBuilder *builder) {
         builder.projectId = @"8724802167";
         builder.logger = optlyLogger;
 
     }];
+    self.optlyManager = [[OPTLYManager alloc] initWithBuilder:builder];
 
+    // https://docs.developers.optimizely.com/full-stack/docs/use-synchronous-or-asynchronous-initialization
+    //Optimizely must be initialized synchronously so that the client is available when the SEGOptimizelyXIntegration is created.
+    //In a real app, you might bundle the Optimizely data file to load it from disk and then update as needed from a server.
+    //In this example, the file is fetched on launch and cached for later use.
+    //On first launch, the file is not yet available when the SEGOptimizelyXIntegration is created.
+    //On second launch, the cached data file is available when SEGOptimizelyXIntegration gets created.
+    OPTLYClient *optimizely = [self.optlyManager initialize];
+    
     [configuration use:[SEGOptimizelyXIntegrationFactory instanceWithOptimizely:self.optlyManager]];
     [SEGAnalytics setupWithConfiguration:configuration];
     [[SEGAnalytics sharedAnalytics] track:@"Testing if malformed"];
@@ -37,25 +46,12 @@
         @"company" : @"segment",
         @"name" : @"ladan"
     }];
-
-    // Test delayed initialization
-    double delayInSeconds = 10.0;
+    
+    // Activate user in an experiment, delayed until Segment has been initialized
+    double delayInSeconds = 5.0;
     dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
     dispatch_after(popTime, dispatch_get_main_queue(), ^(void) {
-
-        // Initialize an Optimizely client by asynchronously downloading the datafile
-        [self.optlyManager initializeWithCallback:^(NSError *_Nullable error, OPTLYClient *_Nullable client) {
-            // Activate user in an experiment
-            OPTLYVariation *variation = [client activate:@"variation_view" userId:@"1234"];
-
-            if ([variation.variationKey isEqualToString:@"variation1"]) {
-                [[SEGAnalytics sharedAnalytics] track:@"Test variation 1"];
-            } else if ([variation.variationKey isEqualToString:@"variation 2"]) {
-                [[SEGAnalytics sharedAnalytics] track:@"Test variation2"];
-            } else {
-                [[SEGAnalytics sharedAnalytics] track:@"No variation triggered"];
-            }
-        }];
+        [optimizely activate:@"variation_view" userId:@"1234"];
     });
 
 

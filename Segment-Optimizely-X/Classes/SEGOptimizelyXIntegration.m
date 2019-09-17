@@ -11,6 +11,12 @@
 #import <Analytics/SEGAnalyticsUtils.h>
 #import <Analytics/SEGAnalytics.h>
 
+@interface SEGOptimizelyXIntegration()
+
+@property (nonatomic) NSInteger notificationIdentifier;
+
+@end
+
 
 @implementation SEGOptimizelyXIntegration
 
@@ -26,12 +32,19 @@
     }
 
     if ([(NSNumber *)[self.settings objectForKey:@"listen"] boolValue]) {
-        self.observer = [[NSNotificationCenter defaultCenter] addObserverForName:OptimizelyDidActivateExperimentNotification
-                                                                          object:nil
-                                                                           queue:nil
-                                                                      usingBlock:^(NSNotification *_Nonnull note) {
-                                                                          [self experimentDidGetViewed:note];
-                                                                      }];
+        if ([self.manager getOptimizely] == nil) {
+            SEGLog(@"SEGOptimizelyX created before Optimizely has been initialized");
+        }
+        OPTLYNotificationCenter* notificationCenter = [self.manager getOptimizely].notificationCenter;
+        self.notificationIdentifier = [notificationCenter addActivateNotificationListener:
+                                       ^(OPTLYExperiment *experiment,
+                                         NSString *userId,
+                                         NSDictionary<NSString *,NSString *> *attributes,
+                                         OPTLYVariation *variation,
+                                         NSDictionary<NSString *,NSObject *> *event) {
+                                           [self experimentDidGetViewed:experiment
+                                                              variation:variation];
+                                       }];
     }
 
     return self;
@@ -67,8 +80,9 @@
     if ([self.manager getOptimizely] == nil) {
         return;
     } else {
-        [[NSNotificationCenter defaultCenter] removeObserver:self.observer];
-        SEGLog(@"[NSNotificationCenter defaultCenter] removeObserver:%@", self.observer);
+        OPTLYNotificationCenter* notificationCenter = [self.manager getOptimizely].notificationCenter;
+        [notificationCenter removeNotificationListener:self.notificationIdentifier];
+        SEGLog(@"[optimizely.notificationCenter removeNotificationListener:%@]", @(self.notificationIdentifier));
     }
 }
 
@@ -109,11 +123,9 @@
 
 #pragma mark - Experiment Viewed
 
-- (void)experimentDidGetViewed:(NSNotification *)notification
+- (void)experimentDidGetViewed:(OPTLYExperiment *)experiment
+                     variation:(OPTLYVariation *)variation
 {
-    OPTLYExperiment *experiment = notification.userInfo[OptimizelyNotificationsUserDictionaryExperimentKey];
-    OPTLYVariation *variation = notification.userInfo[OptimizelyNotificationsUserDictionaryVariationKey];
-
     NSMutableDictionary *properties = [[NSMutableDictionary alloc] init];
     properties[@"experimentId"] = [experiment experimentId];
     properties[@"experimentName"] = [experiment experimentKey];
@@ -166,8 +178,8 @@
 - (void)setupTimer
 {
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (_flushTimer == nil) {
-            _flushTimer = [NSTimer scheduledTimerWithTimeInterval:10.0 target:self selector:@selector(isOptimizelyInitialized) userInfo:nil repeats:YES];
+        if (self.flushTimer == nil) {
+            self.flushTimer = [NSTimer scheduledTimerWithTimeInterval:10.0 target:self selector:@selector(isOptimizelyInitialized) userInfo:nil repeats:YES];
         }
     });
 }

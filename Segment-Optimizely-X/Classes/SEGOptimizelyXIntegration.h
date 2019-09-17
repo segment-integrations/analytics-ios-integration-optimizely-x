@@ -18,7 +18,6 @@
 @property (nonatomic, strong, nonnull) NSDictionary *settings;
 @property (nonatomic, strong, nonnull) OPTLYManager *manager;
 @property (nonatomic, strong, nonnull) SEGAnalytics *analytics;
-@property (nonatomic, nullable) id observer;
 @property (nonatomic, nullable) NSString *userId;
 @property (nonatomic, nullable) NSDictionary *userTraits;
 
