@@ -24,6 +24,7 @@ pod "Segment-Optimizely-X"
 
 ## Usage
 
+Objective-C:
 ```obj-c
     SEGAnalyticsConfiguration *configuration = [SEGAnalyticsConfiguration configurationWithWriteKey:@"<YOUR_WRITE_KEY>"];
     configuration.trackApplicationLifecycleEvents = YES;
@@ -46,6 +47,7 @@ pod "Segment-Optimizely-X"
     [SEGAnalytics setupWithConfiguration:configuration];
 ```
 
+Swift:
 ```swift
     let configuration = SEGAnalyticsConfiguration(writeKey: "<YOUR_WRITE_KEY>")
     configuration.trackApplicationLifecycleEvents = true
