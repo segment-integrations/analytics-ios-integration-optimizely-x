@@ -22,6 +22,52 @@ it, simply add the following line to your Podfile:
 pod "Segment-Optimizely-X"
 ```
 
+## Usage
+
+Objective-C:
+```obj-c
+    SEGAnalyticsConfiguration *configuration = [SEGAnalyticsConfiguration configurationWithWriteKey:@"<YOUR_WRITE_KEY>"];
+    configuration.trackApplicationLifecycleEvents = YES;
+    configuration.recordScreenViews = YES;
+
+    // Setup optimizely logger.
+    OPTLYLoggerDefault *optlyLogger = [[OPTLYLoggerDefault alloc] initWithLogLevel:OptimizelyLogLevelError];
+    // Create an Optimizely manager.
+    self.optlyManager = [OPTLYManager init:^(OPTLYManagerBuilder *_Nullable builder) {
+        builder.projectId = @"<YOUR_PROJECT_ID>";
+        builder.logger = optlyLogger;
+    }];
+    
+    // Initialize an Optimizely client by asynchronously downloading the datafile.
+    [self.optlyManager initializeWithCallback:^(NSError *_Nullable error, OPTLYClient *_Nullable client) {
+       // Optimizely is now up and running.  You can now configure any experiments, etc.
+    }];
+
+    [configuration use:[SEGOptimizelyXIntegrationFactory instanceWithOptimizely:self.optlyManager]];
+    [SEGAnalytics setupWithConfiguration:configuration];
+```
+
+Swift:
+```swift
+    let configuration = SEGAnalyticsConfiguration(writeKey: "<YOUR_WRITE_KEY>")
+    configuration.trackApplicationLifecycleEvents = true
+    configuration.recordScreenViews = true
+
+    let optlyLogger = OPTLYLoggerDefault(logLevel: .error)
+    optlyManager = OPTLYManager.instance(builderBlock: { (builder) in
+        builder?.projectId = "<YOUR_PROJECT_ID>"
+        builder?.logger = optlyLogger
+    })
+
+    optlyManager?.initialize(callback: { (error, optlyClient) in
+        // Optimizely is now up and running.  You can now configure any experiments, etc.
+    })
+
+    configuration.use(SEGOptimizelyXIntegrationFactory.instance(withOptimizely: optlyManager))
+
+    SEGAnalytics.setup(with: configuration)
+```
+
 ## License
 
 Segment-Optimizely-X is available under the MIT license. See the LICENSE file for more info.
