@@ -52,8 +52,6 @@ Swift:
     let configuration = SEGAnalyticsConfiguration(writeKey: "<YOUR_WRITE_KEY>")
     configuration.trackApplicationLifecycleEvents = true
     configuration.recordScreenViews = true
-    configuration.flushAt = 1
-    configuration.middlewares = [ConsentMiddleware()]
 
     let optlyLogger = OPTLYLoggerDefault(logLevel: .error)
     optlyManager = OPTLYManager.instance(builderBlock: { (builder) in
