@@ -206,3 +206,9 @@
 
 
 @end
+
+@implementation OPTLYManager(SegmentOptimizelyX)
++ (OPTLYManager *)instanceWithBuilderBlock:(OPTLYManagerBuilderBlock)builderBlock {
+    return [OPTLYManager init:builderBlock];
+}
+@end

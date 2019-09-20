@@ -11,7 +11,6 @@
 #import <OptimizelySDKiOS/OptimizelySDKiOS.h>
 #import <Analytics/SEGAnalytics.h>
 
-
 @interface SEGOptimizelyXIntegration : NSObject <SEGIntegration>
 
 
@@ -30,4 +29,8 @@
 
 - (id _Nonnull)initWithSettings:(NSDictionary *_Nonnull)settings andOptimizelyManager:(OPTLYManager *_Nonnull)manager withAnalytics:(SEGAnalytics *_Nonnull)analytics;
 
+@end
+
+@interface OPTLYManager(SegmentOptimizelyX)
++ (OPTLYManager *)instanceWithBuilderBlock:(OPTLYManagerBuilderBlock)builderBlock;
 @end
