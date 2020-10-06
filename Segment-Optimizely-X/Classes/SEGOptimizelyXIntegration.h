@@ -7,9 +7,14 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <Analytics/SEGIntegration.h>
 #import <OptimizelySDKiOS/OptimizelySDKiOS.h>
+#if defined(__has_include) && __has_include(<Analytics/SEGAnalytics.h>)
 #import <Analytics/SEGAnalytics.h>
+#import <Analytics/SEGIntegration.h>
+#else
+#import <Segment/SEGAnalytics.h>
+#import <Segment/SEGIntegration.h>
+#endif
 
 @interface SEGOptimizelyXIntegration : NSObject <SEGIntegration>
 
