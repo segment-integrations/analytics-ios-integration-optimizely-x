@@ -7,10 +7,15 @@
 //
 
 #import "SEGOptimizelyXIntegration.h"
+#if defined(__has_include) && __has_include(<Analytics/SEGAnalytics.h>)
+#import <Analytics/SEGAnalytics.h>
 #import <Analytics/SEGIntegration.h>
 #import <Analytics/SEGAnalyticsUtils.h>
-#import <Analytics/SEGAnalytics.h>
-
+#else
+#import <Segment/SEGAnalytics.h>
+#import <Segment/SEGIntegration.h>
+#import <Segment/SEGAnalyticsUtils.h>
+#endif
 
 @implementation SEGOptimizelyXIntegration
 
