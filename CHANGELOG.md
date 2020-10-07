@@ -1,5 +1,9 @@
 Change Log
 ==========
+Version 1.0.4 *(7th October, 2020)*
+-------------------------------------------
+* Update SEGAnalytics imports to support new namespacing introduced in v4.x
+
 Version 1.0.3-beta *(31st October, 2017)*
 -------------------------------------------
 *(Supports analytics-ios 3.0.+)*
