@@ -1,4 +1,3 @@
-
 version: 2
 
 jobs:
@@ -21,11 +20,6 @@ jobs:
       - run: make build
       - run: make test
       - run: make lint
-
- # - store_test_results:
- #          # relies on xcpretty --report junit
- #          path: build/reports
- #      - run: bash <(curl -s https://codecov.io/bash)
 
 workflows:
   version: 2
